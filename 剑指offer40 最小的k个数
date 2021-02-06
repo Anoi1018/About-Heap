@@ -4,6 +4,10 @@
 输入：arr = [3,2,1], k = 2
 输出：[1,2] 或者 [2,1]
 
+限制：
+0 <= k <= arr.length <= 10000
+0 <= arr[i] <= 10000
+
 代码示意：
 一、JS API 排序输出前k个元素
 时间复杂度：O(nlogn)
@@ -63,3 +67,88 @@ var getLeastNumbers = function(arr, k) {
     return bigHeap;
 };
 三、快排
+时间复杂度：O（nlogn）
+空间复杂度：O（logn）
+1、直接使用快排排序整个数组再输出前k个数
+var partition = function(arr,left,right){
+    let i = left, j = right, aid =arr[Math.floor((left+right)/2)];
+    while(i<=j){
+        while(arr[i]<aid) i++;
+        while(arr[j]>aid) j--;
+        if(i<=j){
+            [arr[i],arr[j]] = [arr[j],arr[i]]; //这里的快排相当于调整一次原数组 
+            i++;j--; 
+        }
+    }
+    return i;
+}
+
+var quickSort = function(arr,left,right){
+    let index ;
+    if(arr.length>1){
+        index= partition(arr,left,right);
+        if(left<index-1) quickSort(arr,left,index-1);
+        if(index<right) quickSort(arr,index,right);   //index也参与排序
+    }
+    
+    return arr;
+}
+var getLeastNumbers = function(arr, k) {
+    if(!arr || arr.length<=k) return arr;
+    
+    arr = quickSort(arr,0,arr.length-1);
+    
+    return arr.slice(0,k);
+};
+2、优化后的快排 --》我们只需要保证前k个数是最小的 并不需要对整个数组进行排序
+function partition (arr,left,right) {
+    let pivot = arr[left];
+    while(left<right){
+        while(left<right && arr[right]>=pivot) right--;
+        arr[left] = arr[right];
+        while(left<right && arr[left]<pivot) left++;
+        arr[right] = arr[left];
+    }
+    arr[left] = pivot;  //-》注意此处的不同 这里相当于挖坑填数 改变了原数组元素 上面的快排实现不是 pivot不参与下一次排序
+    return left;
+}
+
+var getLeastNumbers = function(arr, k) {
+    if(!arr || arr.length<=k) return arr;
+    
+    let left = 0,right=arr.length-1;
+    let index= partition(arr,left,right);
+    while(index!==k){
+        if(index<k){
+            left = index+1; //递归时 不包括index
+            index = partition(arr,left,right);
+        }else if(index>k){
+            right = index-1;
+            index = partition(arr,left,right)
+        }
+    } 
+    return arr.slice(0,k);
+};
+
+四、计数排序 作为一种线性时间复杂度的排序，计数排序要求输入的数据必须是有确定范围的整数。它是一种典型的拿空间换时间的排序算法
+时间复杂度：O(n + m)，其中 m 表示数据范围  遍历一遍原数组O（n）--n数组长度  + 遍历一遍计数数组（辅助结构-分布式排序）O（m） 所以O（m+n）
+空间复杂度：O(m)
+var getLeastNumbers = function(arr, k) {
+    if(!arr || arr.length<=k) return arr;
+    let counts = new Array(10001);
+    arr.forEach((element)=>{
+        if(!counts[element]){
+            counts[element] = 0;
+        }
+        counts[element]++;
+    });
+    let sortedIndex = 0;
+    for(let i=0;i<counts.length;i++){
+        while(counts[i]-->0 && sortedIndex<k){
+            arr[sortedIndex++] = i;
+        }
+        if(sortedIndex === k) break;
+    }
+    return arr.slice(0,k);
+};
+
