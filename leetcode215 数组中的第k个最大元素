@@ -1,0 +1,52 @@
+在未排序的数组中找到第 k 个最大的元素。请注意，你需要找的是数组排序后的第 k 个最大的元素，而不是第 k 个不同的元素。
+
+示例 1:
+输入: [3,2,1,5,6,4] 和 k = 2
+输出: 5
+
+示例 2:
+输入: [3,2,3,1,2,4,5,5,6] 和 k = 4
+输出: 4
+
+说明:
+你可以假设 k 总是有效的，且 1 ≤ k ≤ 数组的长度。
+
+代码示意：
+一、JS API
+var findKthLargest = function(nums, k) {
+    return nums.sort((a,b)=>b-a)[k-1];
+};
+二、堆排序 -->小顶堆
+var buildSmallHeap = function(arr){
+    for(let i=Math.floor(arr.length/2);i>=0;i--){
+        siftDown(arr,i,arr.length);
+    }
+}
+var siftDown = function(arr,index,size){
+    let element = index;
+    let left = 2*index+1;
+    let right = 2*index+2;
+    if(left<size && arr[left]<arr[element]) element = left;
+    if(right<size && arr[right]<arr[element]) element = right;
+    if(index!==element){
+        [arr[index],arr[element]] = [arr[element],arr[index]];
+        siftDown(arr,element,size);
+    }
+}
+var findKthLargest = function(nums, k) {
+    if(!nums || k<1 || k>nums.length) return null;
+    let i=0,smallHeap = [];
+    while(i<k){
+        smallHeap.push(nums[i++]);
+    }
+    buildSmallHeap(smallHeap);
+    while(i<nums.length){
+        if(nums[i]>smallHeap[0]){
+            smallHeap[0] = nums[i];
+            siftDown(smallHeap,0,k);
+        }
+        i++;
+    }
+    return smallHeap[0];
+};
+
