@@ -1,0 +1,65 @@
+输入整数数组 arr ，找出其中最小的 k 个数。例如，输入4、5、1、6、2、7、3、8这8个数字，则最小的4个数字是1、2、3、4。
+
+ 示例 ：
+输入：arr = [3,2,1], k = 2
+输出：[1,2] 或者 [2,1]
+
+代码示意：
+一、JS API 排序输出前k个元素
+时间复杂度：O(nlogn)
+空间复杂度：O(logn)
+
+注意：
+在 V8 引擎 7.0 版本之前，数组长度小于10时， Array.prototype.sort() 使用的是插入排序，否则用快速排序。
+
+在 V8 引擎 7.0 版本之后就舍弃了快速排序，因为它不是稳定的排序算法，在最坏情况下，时间复杂度会降级到 O(n2)。
+而是采用了一种混合排序的算法：TimSort 。
+这种功能算法最初用于Python语言中，严格地说它不属于以上10种排序算法中的任何一种，属于一种混合排序算法：
+在数据量小的子数组中使用插入排序，然后再使用归并排序将有序的子数组进行合并排序，时间复杂度为 O(nlogn)
+
+var getLeastNumbers = function(arr, k) {
+    return arr.sort((a,b)=>a-b).slice(0,k);
+};
+
+二、大顶堆
+构建一个size为k的大顶堆 并且不断维护 从而堆内元素对应的就是原数组中最小的 k 个数
+
+时间复杂度：遍历数组需要 O(n) 的时间复杂度，一次堆化需要 O(logk) 时间复杂度，所以利用堆求 Top k 问题的时间复杂度为 O(nlogk)
+空间复杂度：O(k)
+
+优势：在一个动态数组中求 Top k 元素
+
+var buildBigHeap = function(arr){  //构建大顶堆函数 
+      for(let i=Math.floor(arr.length/2);i>=0;i--){ 
+          siftDown(arr,i,arr.length); //除去叶子节点 剩余的一半节点自下而上的找到应该在的位置 从而构建好堆
+      }
+}
+var siftDown = function(arr,index,len){ //siftdown表示将当前节点堆化 进行的是 下沉操作
+    let element = index;  //element 表示的是最大元素的下标 初始化为index
+    let left = 2*index+1;
+    let right = 2*index +2;  //确定需要堆化元素的左右节点
+    if(left<len && arr[left] > arr[element]) element = left;
+    if(right<len && arr[right]>arr[element]) element = right; //左右节点存在 替换element保证其存放最大值下标
+    if(element!==index){ //当前index节点不是最大值  两者交换保证index最大 然后递归element现在存放的新节点
+        [arr[element],arr[index]] = [arr[index],arr[element]];
+        siftDown(arr,element,len);
+    }
+
+}
+var getLeastNumbers = function(arr, k) {
+    if(!arr || arr.length<=k) return arr;
+    let bigHeap = [],i=0;
+    while(i<k){
+        bigHeap.push(arr[i++]);
+    }
+    buildBigHeap(bigHeap); //1.将数组构造为大顶堆
+    while(i<arr.length){
+        if(arr[i]<bigHeap[0]){ //2.维护存有k个最小元素的大顶堆
+            bigHeap[0] = arr[i];
+            siftDown(bigHeap,0,k); //3.替换堆顶元素后 从堆顶开始 堆化操作
+        }
+        i++;
+    }
+    return bigHeap;
+};
+三、快排
