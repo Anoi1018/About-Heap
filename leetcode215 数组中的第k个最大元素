@@ -49,4 +49,95 @@ var findKthLargest = function(nums, k) {
     }
     return smallHeap[0];
 };
+三、快速选择排序
+在快排的基础上进行改进 缩小排序范围 时间复杂度O（n） 空间复杂度：O（1）
+var findKthLargest = function(nums, k) {
+    if(!nums || k<1 || k>nums.length) return null;
+    return quickSort(nums,0,nums.length-1,nums.length-k);
+};
+var quickSort = function(nums,left,right,k){
+    let index = partition(nums,left,right);
+    while(index!==k){
+        if(index<k){
+            left = index+1;
+            index = partition(nums,left,right);
+        }else{
+            right = index-1;
+            index = partition(nums,left,right);
+        }
+    }
+    return nums[index];
+}
+var partition = function(arr,left,right){
+    let i = left,j=right,pivot = arr[Math.floor(Math.random()*(right-left))+left]; //--》快速选择的pivot可以是数组两边数据、中间数据、或者是随机数
+    //当数组已经是有序数组 采用数组边界数据作为pivot 时间复杂度最差表现为O（n^2）
+    while(i<j){
+        while(arr[i]<pivot) i++;
+        while(arr[j]>pivot) j--;
+        if(i<j) [arr[i],arr[j]] = [arr[j],arr[i]];
+        // 当数组中存在重复数据时，即都为datum，但位置不同
+        // 继续递增i，防止死循环
+        if(arr[i]===arr[j]&&i!==j) i++;
+    
+    }
+    arr[i] = pivot;
+    return i;
+}
+四、中位数的中位数算法（BFPRT） 最坏时间复杂度O（n）
+就是在快速选择的基础上 增加了关于pivot选择的算法 用于避免快速选择排序的最坏情况时间复杂度为O（n^2）的出现 --》增加bfprt+插入排序 两个函数
+1.将原数组五个五个的分成一个个小数组 采用插入排序求取各个小数组的中位数  2、在取得的所有中位数再使用插入排序获取最终的中位数 3、将这个中位数的中位数 的 下标 作为快速选择的基准值pivot 的下标
+var findKthLargest = function(nums, k) {
+    if(!nums || k<1 || k>nums.length) return null;
+    return quickSort(nums,0,nums.length-1,nums.length-k);
+};
+var quickSort = function(nums,left,right,k){
+    let index = partition(nums,left,right);
+    while(index!==k){
+        if(index<k){
+            left = index+1;
+            index = partition(nums,left,right);
+        }else{
+            right = index-1;
+            index = partition(nums,left,right);
+        }
+    }
+    return nums[index];
+}
+var partition = function(arr,left,right){
+    let pivotIndex = bfprt(arr,left,right);
+    let i = left,j=right,pivot = arr[pivotIndex]; //bfprt返回的是中位数的中位数的下标
+    while(i<j){
+        while(arr[i]<pivot) i++;
+        while(arr[j]>pivot) j--;
+        if(i<j) [arr[i],arr[j]] = [arr[j],arr[i]];
+        if(arr[i]===arr[j]&&i!==j) i++;
+    }
+    arr[i] = pivot;
+    return i;
+}
+//1.BFPRT算法
+var bfprt = function(arr,left,right){
+    let n = left;
+    if(right-left<5) return insertSort(arr,left,right);
+    for(let i = left;i+4<=right;i+=5){ //5个一组 若有剩余舍去
+        let midIndex = insertSort(arr,i,i+4); //选择排序返回长度为5的小数组的中位数
+        [arr[n],arr[midIndex]] = [arr[midIndex],arr[n]]; //将各个中位数放到arr数组的最左边 
+        n++;
+    }
+    return bfprt(arr,left,n); //返回的是中位数的中位数的下标
+}
+//2.选择排序算法 
+var insertSort = function(arr,left,right){
+    if(arr.length<2) return 0;
+    for(let i = left+1;i<=right;i++){
+        let temp = arr[i];
+        let j = i-1;
+        while(j>=0 && arr[j]>arr[i]){
+            arr[j+1] = arr[j];
+            j--;
+        }
+        arr[j+1] = temp;
+    }
+    return Math.floor((right-left)>>1)+left; //注意是 中位数的下标 不是中位数
+}
 
