@@ -15,7 +15,123 @@ addNum(3)
 findMedian() -> 2
 
 进阶:
-如果数据流中所有整数都在 0 到 100 范围内，你将如何优化你的算法？
+如果数据流中所有整数都在 0 到 100 范围内，你将如何优化你的算法？ --》可以用计数排序找中位数
 如果数据流中 99% 的整数都在 0 到 100 范围内，你将如何优化你的算法？
 
+解题思路：
+这里需要维护两个堆：
+大顶堆：用来存取前 n/2 个小元素，如果 n 为奇数，则用来存取前 Math.floor(n/2) + 1 个元素
+小顶堆：用来存取后 n/2 个小元素
+那么，根据题目要求，中位数就为：
+n 为奇数：中位数是大顶堆的堆顶元素
+n 为偶数：中位数是大顶堆的堆顶元素与小顶堆的堆顶元素的平均值
+当数组为动态数组时，每当数组中插入一个元素时，都需要如何调整堆喃？
+如果插入元素比大顶堆的堆顶要大，则将该元素插入到小顶堆中；如果要小，则插入到大顶堆中。
+当插入完成后，如果大顶堆、小顶堆中元素的个数不满足我们已上的要求，我们就需要不断的将大顶堆的堆顶元素或小顶堆的堆顶元素移动到另一个堆中，直到满足要求
+
+时间复杂度：O（logn）空间复杂度：O（n）
+
 代码示意：
+//动态数组元素个数n -- 偶数 两堆各一半 返回两堆首元素平均值 n--奇数 大顶堆比小顶堆多放一个 返回大顶堆堆首元素
+var MedianFinder = function() {
+    this.minHeap = new MinHeap(); //-->小顶堆
+    this.maxHeap = new MaxHeap(); //-->大顶堆
+};
+MedianFinder.prototype.addNum = function(num) {
+    if(this.maxHeap.isEmpty() || num < this.maxHeap.getHead()){
+        //当前大顶堆为空 或者当前元素小于大顶堆堆首 加入大顶堆 否则加入小顶堆
+        this.maxHeap.insert(num);
+    }else{
+        this.minHeap.insert(num);
+    }
+    //加入元素后 判断大小顶堆的size之差 当不满足大顶堆size比小顶堆size大一个 或者相等 调整两个堆
+    
+    if(this.maxHeap.getSize() - this.minHeap.getSize() >1){
+        this.minHeap.insert(this.maxHeap.removeHead()); //将大顶堆堆首元素插入到小顶堆中
+    }
+    if(this.minHeap.getSize()>this.maxHeap.getSize()){
+        this.maxHeap.insert(this.minHeap.removeHead()); //将小顶堆堆首元素插入到大顶堆中
+    }
+};
+MedianFinder.prototype.findMedian = function() {
+    let minSize = this.minHeap.getSize(),maxSize = this.maxHeap.getSize();
+    if(maxSize && maxSize === minSize){
+        return ((this.minHeap.getHead()+this.maxHeap.getHead())/2);  
+        // “/2”可以表示出1.5 >>1 表示的是整数比如说是1
+    }
+    return this.maxHeap.getHead();
+};
+//先提取出判断元素大小的公用函数compareFn 并将比较结果 构造为COMPARE常量
+const Compare = {
+    LESS_THAN:-1,
+    BIGGER_THAN:1
+}
+const  defaultCompareFn = function(a,b){
+    if(a===b) return 0;
+    return a<b?Compare.LESS_THAN : Compare.BIGGER_THAN;
+}
+//构造用于交换堆中两元素的函数swap
+
+//构造小顶堆类
+//需要包含用到的5个函数：getSize（）、insert（num）、removeHead（）、getHead（）、heapify（）
+class MinHeap{
+    constructor(compareFn = defaultCompareFn){
+        this.compareFn = compareFn;
+        this.heap = [];
+    }
+    getSize(){
+        return this.heap.length;
+    }
+    isEmpty(){
+        return this.getSize() === 0;
+    }
+    insert(num){
+        if(num!==null){
+            this.heap.push(num);
+            this.siftUp(this.heap.length-1);
+        }  
+    }
+    siftUp(index){
+        let parent  = index===0? undefined : Math.floor((index-1)/2);
+        while(index > 0 && this.compareFn(this.heap[parent],this.heap[index]) === Compare.BIGGER_THAN){
+            [this.heap[index],this.heap[parent]] = [this.heap[parent],this.heap[index]];
+            index = parent;
+            parent = index===0? undefined : Math.floor((index-1)/2);
+        }
+    }
+    getHead(){
+        return this.isEmpty()? undefined : this.heap[0];
+    }
+    removeHead(){
+        if(this.isEmpty()) return undefined;
+        if(this.getSize()===1) return this.heap.pop();
+        let removed = this.heap[0];  //!!!不要写成this.heap.shift()  会出错 因为this.heap.shift()会改变数组长度
+        this.heap[0] = this.heap.pop();
+        this.heapify(0);
+        return removed;
+    }
+    heapify(index){//自上而下堆化
+      let element = index,size = this.getSize(),{heap,compareFn} = this;
+      let left = 2*index+1;
+      let right = 2*index+2;
+      if(left<size && compareFn(heap[left],heap[element]) === Compare.LESS_THAN) element = left;
+      if(right<size && compareFn(heap[right],heap[element]) === Compare.LESS_THAN) element = right;
+      if(index!==element) {
+          [heap[index],heap[element]] = [heap[element],heap[index]];
+          this.heapify(element);
+      }
+    }
+}
+// 构造大顶堆  采用继承最小堆的方法
+// 只需要将 小顶堆中的< 变成>  即reverse比较的两个数 a b 
+function reverseCompare(compareFn){
+        return (a,b) => compareFn(b,a);
+}
+class MaxHeap extends MinHeap{
+    constructor(compareFn =  defaultCompareFn){
+        super(compareFn);
+        this.compareFn = reverseCompare(compareFn);   
+    } 
+}
+
+
