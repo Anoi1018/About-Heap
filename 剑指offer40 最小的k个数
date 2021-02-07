@@ -100,7 +100,9 @@ var getLeastNumbers = function(arr, k) {
     
     return arr.slice(0,k);
 };
-2、优化后的快排 --》我们只需要保证前k个数是最小的 并不需要对整个数组进行排序
+2、优化后的快排(快速选择) --》我们只需要保证前k个数是最小的 并不需要对整个数组进行排序
+时间复杂度O（n）最坏O（n^2）
+空间复杂度：O（1）
 function partition (arr,left,right) {
     let pivot = arr[left];
     while(left<right){
