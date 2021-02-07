@@ -68,7 +68,7 @@ var getLeastNumbers = function(arr, k) {
 };
 三、快排
 时间复杂度：O（nlogn）
-空间复杂度：O（logn）
+空间复杂度：O（nlogn）
 1、直接使用快排排序整个数组再输出前k个数
 var partition = function(arr,left,right){
     let i = left, j = right, aid =arr[Math.floor((left+right)/2)];
