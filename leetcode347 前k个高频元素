@@ -15,7 +15,8 @@
 你可以按任意顺序返回答案。
 
 代码展示：
-一、map+重构sort
+一、map+数组  重构sort
+时间复杂度：O（nlogn） 空间复杂度O（n）
 1 遍历一遍数组 用map记录 元素：出现次数
 2 将map对象转化为数组 则数组作为线性数据结构可以使用sort（）函数
 3 重写sort函数 传入a b 表示两个键值对  a[0] b[0] --键/元素  a[1] b[1]--值/元素出现次数  (a,b)=>b[1]-a[1] 实现了按value逆序将键值对排好序
@@ -38,4 +39,102 @@ var topKFrequent = function(nums, k) {
     }
     return ans;
 };
+
+或者：
+var topKFrequent = function(nums, k) {
+    if(!nums || nums.length<=k) return nums;
+
+    let map = new Map();
+    for(const n of nums){
+        if(map.has(n)){
+            map.set(n,map.get(n)+1);
+        }else{
+            map.set(n,1);
+        }
+    }
+    let arr=[...map.keys()];
+    if(map.size<=k) return arr;
+    return arr.sort((a,b)=>map.get(b)-map.get(a)).slice(0,k); 
+};
+二、map+小顶堆
+1、遍历原数组 构造map map存放数组元素值+出现次数
+2、将map前k个元素的key 放入一个数组 将这个数组构造为小顶堆 （按照map元素的value大小）
+3、从map中第k+1个元素开始 将当前map元素的value与堆顶元素的value进行比较，若map元素的value更大 map的key替换堆顶元素
+4、重新将小顶堆堆化 重复3过程 直至遍历完map  输出小顶堆
+时间复杂度：O（nlogk） 空间复杂度：O（n）
+var buildSmallHeap = function(arr,map,k){
+    if(k===1) return ;
+    for(let i = Math.floor(k/2);i>=0;i--){
+        siftDown(arr,i,k,map);
+    }
+}
+var siftDown = function(arr,index,size,map){
+    let element = index;
+    let left = 2*index+1;
+    let right = 2*index+2;
+    if(left<size && map.get(arr[left])<map.get(arr[element])) element = left;
+    if(right<size && map.get(arr[right])<map.get(arr[element])) element = right;
+    if(index!==element){
+        [arr[index],arr[element]] = [arr[element],arr[index]];
+        siftDown(arr,element,size,map);
+    }
+}
+var topKFrequent = function(nums, k) {
+    if(!nums || nums.length<=k) return nums;
+
+    let map = new Map(),i=0,smallHeap=[];
+    for(const n of nums){
+        if(map.has(n)){
+            map.set(n,map.get(n)+1);
+        }else{
+            map.set(n,1);
+        }
+    }
+    if(map.size<=k) return [...map.keys()];
+    //map.forEach 可以拿到map元素的value key 
+    map.forEach((value,key)=>{
+        //用i来实现 对于第i个map元素的操作
+        if(i<k){
+            smallHeap.push(key);
+            if(i===k-1) buildSmallHeap(smallHeap,map,k);
+        }else if(value>map.get(smallHeap[0])){
+            smallHeap[0] = key;
+            siftDown(smallHeap,0,k,map);
+        }
+        i++;
+    });
+    return smallHeap;   
+};
+三、map+桶
+计数排序：桶（用数组表示）下标表示key 桶内元素表示的是当前值的出现次数（value） --》 可以获取到某一元素的元素个数 排序好数组 可以获取到前k个最小或最大元素 --》前k大/小
+桶排序：桶（用数组表示）下标表示出现频率（value） 桶内元素表示的是该出现频率所对应的元素值（key） --》可以根据出现频率来获取到元素 --》前k高频/低频
+
+桶排序 (Bucket sort)的工作的原理：假设输入数据服从均匀分布，将数据分到有限数量的桶里，每个桶再分别排序（有可能再使用别的排序算法或是以递归方式继续使用桶排序进行排）。
+首先使用 map 来存储频率
+然后创建一个数组（有数量的桶），将频率作为数组下标，对于出现频率不同的数字集合，存入对应的数组下标（桶内）即可。
+
+时间复杂度：O（n） 空间复杂度：O（n）
+var topKFrequent = function(nums, k) {
+    let map = new Map();
+    nums.map((num)=>{
+         if(map.has(num))  map.set(num,map.get(num)+1)  
+         else  map.set(num,1);
+    })
+    if(map.size<=k) return [...map.keys()];
+    return bucketSort(map,k);  
+};
+var bucketSort = function(map,k){
+    let buckets = [],res = [];
+    map.forEach((value,key)=>{ 
+        if(!buckets[value]) buckets[value] = [key] 
+        else buckets[value].push(key);
+    })
+    for(let i=buckets.length-1;i>=0 && res.length<k;i--){
+        if(buckets[i]) res.push(...buckets[i]);
+    }
+    return res;
+}
+
+
+ 
 
